@@ -8,65 +8,108 @@ const {
   PermissionsBitField,
   SlashCommandBuilder,
   REST,
-  Routes
+  Routes,
+  StringSelectMenuBuilder,
+  EmbedBuilder
 } = require('discord.js');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-// TOKENS
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 
-// REGISTRAR COMANDO /panel
+// REGISTRAR /panel
 const commands = [
   new SlashCommandBuilder()
     .setName('panel')
-    .setDescription('Crear panel de tickets')
-].map(command => command.toJSON());
+    .setDescription('Mostrar panel de tickets')
+].map(cmd => cmd.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 (async () => {
-  try {
-    await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
-      { body: commands }
-    );
-    console.log('✅ Comando /panel registrado');
-  } catch (error) {
-    console.error(error);
-  }
+  await rest.put(
+    Routes.applicationCommands(CLIENT_ID),
+    { body: commands }
+  );
 })();
 
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`🤖 Bot conectado como ${client.user.tag}`);
 });
 
 client.on('interactionCreate', async interaction => {
 
-  // COMANDO /panel
+  // /panel
   if (interaction.isChatInputCommand()) {
     if (interaction.commandName === 'panel') {
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('crear_ticket')
-          .setLabel('🎟️ Crear Ticket')
-          .setStyle(ButtonStyle.Primary)
-      );
+      const embed = new EmbedBuilder()
+        .setTitle('🎫 Tickets')
+        .setDescription(
+          `En este apartado encontrarás los siguientes tickets:\n\n` +
+          `📌 Ayuda Administrativa\n` +
+          `📌 Soporte Técnico\n` +
+          `📌 Reportes\n` +
+          `📌 Solicitud de Rol\n` +
+          `📌 Facciones\n` +
+          `📌 Apelar Sanción\n\n` +
+          `⚠️ *Es importante abrir el ticket en la categoría destinada.*`
+        )
+        .setColor(0x2f3136);
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId('ticket_categoria')
+        .setPlaceholder('📂 Selecciona la categoría del ticket')
+        .addOptions([
+          {
+            label: 'Ayuda Administrativa',
+            value: 'admin',
+            emoji: '📌'
+          },
+          {
+            label: 'Soporte Técnico',
+            value: 'soporte',
+            emoji: '🛠️'
+          },
+          {
+            label: 'Reportes',
+            value: 'reportes',
+            emoji: '🚨'
+          },
+          {
+            label: 'Solicitud de Rol',
+            value: 'rol',
+            emoji: '🎭'
+          },
+          {
+            label: 'Facciones',
+            value: 'facciones',
+            emoji: '⚔️'
+          },
+          {
+            label: 'Apelar Sanción',
+            value: 'apelacion',
+            emoji: '⚖️'
+          }
+        ]);
+
+      const row = new ActionRowBuilder().addComponents(menu);
 
       await interaction.reply({
-        content: '📩 **Sistema de Tickets**',
+        embeds: [embed],
         components: [row]
       });
     }
   }
 
-  // BOTÓN CREAR TICKET
-  if (interaction.isButton()) {
-    if (interaction.customId === 'crear_ticket') {
+  // CUANDO SELECCIONA CATEGORÍA
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId === 'ticket_categoria') {
+
+      const categoria = interaction.values[0];
 
       const channel = await interaction.guild.channels.create({
         name: `ticket-${interaction.user.username}`,
@@ -86,9 +129,14 @@ client.on('interactionCreate', async interaction => {
         ]
       });
 
-      await channel.send(`🎫 Ticket creado por ${interaction.user}`);
+      await channel.send(
+        `🎟️ **Ticket creado**\n` +
+        `👤 Usuario: ${interaction.user}\n` +
+        `📂 Categoría: **${categoria}**`
+      );
+
       await interaction.reply({
-        content: '✅ Ticket creado',
+        content: '✅ Ticket creado correctamente',
         ephemeral: true
       });
     }
@@ -96,4 +144,5 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(TOKEN);
+
 
