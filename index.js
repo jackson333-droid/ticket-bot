@@ -134,9 +134,9 @@ if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_categor
     content: '✅ Tu ticket fue creado correctamente.'
   });
 }
-});
 
 client.login(TOKEN);
+
 
 
 
