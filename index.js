@@ -42,107 +42,98 @@ client.once('clientReady', () => {
 
 client.on('interactionCreate', async interaction => {
 
-  // /panel
-  if (interaction.isChatInputCommand()) {
-    if (interaction.commandName === 'panel') {
+  /* =======================
+     COMANDO /panel (ADMIN)
+     ======================= */
+  if (interaction.isChatInputCommand() && interaction.commandName === 'panel') {
 
-      const embed = new EmbedBuilder()
-        .setTitle('🎫 Tickets')
-        .setDescription(
-          `En este apartado encontrarás los siguientes tickets:\n\n` +
-          `📌 Ayuda Administrativa\n` +
-          `📌 Soporte Técnico\n` +
-          `📌 Reportes\n` +
-          `📌 Solicitud de Rol\n` +
-          `📌 Facciones\n` +
-          `📌 Apelar Sanción\n\n` +
-          `⚠️ *Es importante abrir el ticket en la categoría destinada.*`
-        )
-        .setColor(0x2f3136);
-
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId('ticket_categoria')
-        .setPlaceholder('📂 Selecciona la categoría del ticket')
-        .addOptions([
-          {
-            label: 'Ayuda Administrativa',
-            value: 'admin',
-            emoji: '📌'
-          },
-          {
-            label: 'Soporte Técnico',
-            value: 'soporte',
-            emoji: '🛠️'
-          },
-          {
-            label: 'Reportes',
-            value: 'reportes',
-            emoji: '🚨'
-          },
-          {
-            label: 'Solicitud de Rol',
-            value: 'rol',
-            emoji: '🎭'
-          },
-          {
-            label: 'Facciones',
-            value: 'facciones',
-            emoji: '⚔️'
-          },
-          {
-            label: 'Apelar Sanción',
-            value: 'apelacion',
-            emoji: '⚖️'
-          }
-        ]);
-
-      const row = new ActionRowBuilder().addComponents(menu);
-
-      await interaction.reply({
-        embeds: [embed],
-        components: [row]
-      });
-    }
-  }
-
-  // CUANDO SELECCIONA CATEGORÍA
-  if (interaction.isStringSelectMenu()) {
-    if (interaction.customId === 'ticket_categoria') {
-
-      const categoria = interaction.values[0];
-
-      const channel = await interaction.guild.channels.create({
-        name: `ticket-${interaction.user.username}`,
-        type: ChannelType.GuildText,
-        permissionOverwrites: [
-          {
-            id: interaction.guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel]
-          },
-          {
-            id: interaction.user.id,
-            allow: [
-              PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages
-            ]
-          }
-        ]
-      });
-
-      await channel.send(
-        `🎟️ **Ticket creado**\n` +
-        `👤 Usuario: ${interaction.user}\n` +
-        `📂 Categoría: **${categoria}**`
-      );
-
-      await interaction.reply({
-        content: '✅ Ticket creado correctamente',
+    // 🔒 SOLO ADMINISTRADORES
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+      return interaction.reply({
+        content: '❌ No tienes permisos para usar este comando.',
         ephemeral: true
       });
     }
+
+    const embed = new EmbedBuilder()
+      .setTitle('🎫 Tickets')
+      .setDescription(
+        `En este apartado encontrarás los siguientes tickets:\n\n` +
+        `📌 Ayuda Administrativa\n` +
+        `📌 Soporte Técnico\n` +
+        `📌 Reportes\n` +
+        `📌 Solicitud de Rol\n` +
+        `📌 Facciones\n` +
+        `📌 Apelar Sanción\n\n` +
+        `⚠️ *Es importante abrir el ticket en la categoría destinada.*`
+      )
+      .setColor(0x2f3136);
+
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId('ticket_categoria')
+      .setPlaceholder('📂 Selecciona la categoría del ticket')
+      .addOptions([
+        { label: 'Ayuda Administrativa', value: 'Ayuda Administrativa', emoji: '📌' },
+        { label: 'Soporte Técnico', value: 'Soporte Técnico', emoji: '🛠️' },
+        { label: 'Reportes', value: 'Reportes', emoji: '🚨' },
+        { label: 'Solicitud de Rol', value: 'Solicitud de Rol', emoji: '🎭' },
+        { label: 'Facciones', value: 'Facciones', emoji: '⚔️' },
+        { label: 'Apelar Sanción', value: 'Apelar Sanción', emoji: '⚖️' }
+      ]);
+
+    const row = new ActionRowBuilder().addComponents(menu);
+
+    // 👻 OCULTAR COMANDO
+    await interaction.deferReply({ ephemeral: true });
+
+    // 📩 ENVIAR PANEL AL CANAL
+    await interaction.channel.send({
+      embeds: [embed],
+      components: [row]
+    });
+
+    // ✅ CONFIRMACIÓN SOLO PARA ADMIN
+    await interaction.editReply({
+      content: '✅ Panel de tickets enviado correctamente.'
+    });
   }
-});
+
+  /* =======================
+     SELECCIÓN DE CATEGORÍA
+     ======================= */
+  if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_categoria') {
+
+    const categoria = interaction.values[0];
+
+    const channel = await interaction.guild.channels.create({
+      name: `ticket-${interaction.user.username}`,
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel]
+        },
+        {
+          id: interaction.user.id,
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages
+          ]
+        }
+      ]
+    });
+
+    await channel.send(
+      `🎟️ **Ticket creado**\n` +
+      `👤 Usuario: ${interaction.user}\n` +
+      `📂 Categoría: **${categoria}**`
+    );
+
+    await interaction.reply({
+      content: '✅ Ticket creado correctamente.',
+      ephemeral: true
+    });
+  }
+}
 
 client.login(TOKEN);
-
-
