@@ -134,7 +134,8 @@ client.on('interactionCreate', async interaction => {
       ephemeral: true
     });
   }
-
+});
 
 client.login(TOKEN);
+
 
