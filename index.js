@@ -16,8 +16,8 @@ const client = new Client({
 });
 
 // TOKENS
-const TOKEN = 'MTQ2Njg5NTI5MjQ1MTM4OTYxNA.Glvogd.TWp-r-o5xzSWB9T98D3J05SrWcoVx47QTlEiKE';
-const CLIENT_ID = '1466895292451389614';
+const TOKEN = process.env.TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
 
 // REGISTRAR COMANDO /panel
 const commands = [
@@ -96,3 +96,4 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(TOKEN);
+
