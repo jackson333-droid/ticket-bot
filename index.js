@@ -2,6 +2,8 @@ const {
   Client,
   GatewayIntentBits,
   ActionRowBuilder,
+  Partials,
+  Events,
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
@@ -55,87 +57,86 @@ client.on('interactionCreate', async interaction => {
       });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle('🎫 Tickets')
-      .setDescription(
-        `En este apartado encontrarás los siguientes tickets:\n\n` +
-        `📌 Ayuda Administrativa\n` +
-        `📌 Soporte Técnico\n` +
-        `📌 Reportes\n` +
-        `📌 Solicitud de Rol\n` +
-        `📌 Facciones\n` +
-        `📌 Apelar Sanción\n\n` +
-        `⚠️ *Es importante abrir el ticket en la categoría destinada.*`
-      )
-      .setColor(0x2f3136);
+  const embed = new EmbedBuilder()
+    .setTitle('🎫 Tickets')
+    .setDescription(
+      'En este apartado encontrarás los siguientes tickets:\n\n' +
+      '📌 Ayuda Administrativa\n' +
+      '📌 Soporte Técnico\n' +
+      '📌 Reportes\n' +
+      '📌 Solicitud de Rol\n' +
+      '📌 Facciones\n' +
+      '📌 Apelar Sanción\n\n' +
+      'Selecciona la categoría correcta abajo 👇'
+    )
+    .setColor(0x2f3136);
+  
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId('ticket_categoria')
+    .setPlaceholder('📂 Selecciona la categoría del ticket')
+    .addOptions([
+      { label: 'Ayuda Administrativa', value: 'Ayuda Administrativa' },
+      { label: 'Soporte Técnico', value: 'Soporte Técnico' },
+      { label: 'Reportes', value: 'Reportes' },
+      { label: 'Solicitud de Rol', value: 'Solicitud de Rol' },
+      { label: 'Facciones', value: 'Facciones' },
+      { label: 'Apelar Sanción', value: 'Apelar Sanción' }
+    ]);
+  
+  const row = new ActionRowBuilder().addComponents(menu);
+  
+  // ocultar comando
+  await interaction.deferReply({ ephemeral: true });
+  
+  // enviar panel al canal
+  await interaction.channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+  
+  // confirmar al admin
+  await interaction.editReply({
+    content: '✅ Panel de tickets enviado.'
+  });
 
-    const menu = new StringSelectMenuBuilder()
-      .setCustomId('ticket_categoria')
-      .setPlaceholder('📂 Selecciona la categoría del ticket')
-      .addOptions([
-        { label: 'Ayuda Administrativa', value: 'Ayuda Administrativa', emoji: '📌' },
-        { label: 'Soporte Técnico', value: 'Soporte Técnico', emoji: '🛠️' },
-        { label: 'Reportes', value: 'Reportes', emoji: '🚨' },
-        { label: 'Solicitud de Rol', value: 'Solicitud de Rol', emoji: '🎭' },
-        { label: 'Facciones', value: 'Facciones', emoji: '⚔️' },
-        { label: 'Apelar Sanción', value: 'Apelar Sanción', emoji: '⚖️' }
-      ]);
+// CREAR TICKET POR CATEGORÍA
+if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_categoria') {
 
-    const row = new ActionRowBuilder().addComponents(menu);
+  await interaction.deferReply({ ephemeral: true });
 
-    // 👻 OCULTAR COMANDO
-    await interaction.deferReply({ ephemeral: true });
+  const categoria = interaction.values[0];
 
-    // 📩 ENVIAR PANEL AL CANAL
-    await interaction.channel.send({
-      embeds: [embed],
-      components: [row]
-    });
+  const channel = await interaction.guild.channels.create({
+    name: `ticket-${interaction.user.username}`,
+    type: ChannelType.GuildText,
+    permissionOverwrites: [
+      {
+        id: interaction.guild.id,
+        deny: [PermissionsBitField.Flags.ViewChannel]
+      },
+      {
+        id: interaction.user.id,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages
+        ]
+      }
+    ]
+  });
 
-    // ✅ CONFIRMACIÓN SOLO PARA ADMIN
-    await interaction.editReply({
-      content: '✅ Panel de tickets enviado correctamente.'
-    });
-  }
+  await channel.send(
+    `🎟️ **Ticket creado**\n` +
+    `👤 Usuario: ${interaction.user}\n` +
+    `📂 Categoría: **${categoria}**`
+  );
 
-  /* =======================
-     SELECCIÓN DE CATEGORÍA
-     ======================= */
-  if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_categoria') {
-
-    const categoria = interaction.values[0];
-
-    const channel = await interaction.guild.channels.create({
-      name: `ticket-${interaction.user.username}`,
-      type: ChannelType.GuildText,
-      permissionOverwrites: [
-        {
-          id: interaction.guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel]
-        },
-        {
-          id: interaction.user.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ]
-        }
-      ]
-    });
-
-    await channel.send(
-      `🎟️ **Ticket creado**\n` +
-      `👤 Usuario: ${interaction.user}\n` +
-      `📂 Categoría: **${categoria}**`
-    );
-
-    await interaction.reply({
-      content: '✅ Ticket creado correctamente.',
-      ephemeral: true
-    });
-  }
+  await interaction.editReply({
+    content: '✅ Tu ticket fue creado correctamente.'
+  });
+}
 });
 
 client.login(TOKEN);
+
 
 
